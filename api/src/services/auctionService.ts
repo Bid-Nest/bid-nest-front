@@ -3,19 +3,20 @@ import { Auction } from 'models/auctionModel';
 import mongoose from 'mongoose';
 import path from 'path';
 import { IAuction } from 'interfaces/Auction';
+import { IAuctionService } from 'types/index';
 
 const defaultImagePath = path.join(
   __dirname,
   'public/images/defaultAuctionImage.jpg',
 );
 
-eaxport class AuctionService {
-  public async createAuction(
+export class AuctionService implements IAuctionService {
+  async createAuction(
     userId: string,
-    body: any,
-    file: Express.Multer.File | undefined,
-  ) {
-    let imageData = null;
+    body: Partial<IAuction>,
+    file?: Express.Multer.File,
+  ): Promise<IAuction> {
+    let imageData: Buffer | null = null;
     if (file) {
       const safeRoot = path.resolve(__dirname, '../../uploads');
       const resolvedPath = path.resolve(file.path);
@@ -26,7 +27,7 @@ eaxport class AuctionService {
       }
     }
 
-    const auctionData = {
+    const auctionData: Partial<IAuction> = {
       ...body,
       seller: new mongoose.Types.ObjectId(userId),
       image: file
@@ -41,21 +42,23 @@ eaxport class AuctionService {
     return auction.save();
   }
 
-  public async getAuctionById(auctionId: string) {
+  async getAuctionById(auctionId: string): Promise<IAuction | null> {
     return Auction.findById(auctionId)
       .populate('seller', '_id name')
       .populate('bids.bidder', '_id name')
       .exec();
   }
 
-  public async getAuctionsBySeller(userId: string) {
+  async getAuctionsBySeller(userId: string): Promise<IAuction[]> {
     return Auction.find({ seller: userId })
       .populate('seller', '_id name')
       .populate('bids.bidder', '_id name')
       .exec();
   }
 
-  public async getAuctionPhoto(auctionId: string) {
+  async getAuctionPhoto(
+    auctionId: string,
+  ): Promise<{ data: Buffer; contentType: string } | { path: string } | null> {
     const auction = await Auction.findById(auctionId);
     if (!auction) {
       return null;
@@ -66,20 +69,19 @@ eaxport class AuctionService {
         data: auction.image.data,
         contentType: auction.image.contentType,
       };
-    } else {
-      return { path: defaultImagePath };
     }
+    return { path: defaultImagePath };
   }
 
-  public async updateAuctionById(
+  async updateAuctionById(
     auctionId: string,
     body: Partial<IAuction>,
-    file: Express.Multer.File | undefined,
-  ) {
-    const updateAuctionData: Partial<IAuction> = this.validateAuctionData(body);
+    file?: Express.Multer.File,
+  ): Promise<IAuction | null> {
+    const updateAuctionData = this.validateAuctionData(body);
 
     if (file) {
-      let imageData = null;
+      let imageData: Buffer | null = null;
       const safeRoot = path.resolve(__dirname, '../../uploads');
       const resolvedPath = path.resolve(file.path);
       if (resolvedPath.startsWith(safeRoot)) {
@@ -108,15 +110,18 @@ eaxport class AuctionService {
     ).exec();
   }
 
-  public async deleteAuctionById(auctionId: string) {
+  async deleteAuctionById(
+    auctionId: string,
+  ): Promise<{ deletedCount: number } | null> {
     const auction = await Auction.findOne({ _id: auctionId });
     if (!auction) {
       return null;
     }
-    return Auction.deleteOne({ _id: auctionId });
+    const result = await Auction.deleteOne({ _id: auctionId });
+    return result;
   }
 
-  public async getOpenAuctions() {
+  async getOpenAuctions(): Promise<IAuction[]> {
     return Auction.find({ bidEnd: { $gt: new Date() } })
       .sort('bidStart')
       .populate('seller', '_id name')
@@ -124,11 +129,11 @@ eaxport class AuctionService {
       .exec();
   }
 
-  public async getAllAuctions() {
+  async getAllAuctions(): Promise<IAuction[]> {
     return Auction.find({}).exec();
   }
 
-  public async getAuctionsByBidder(userId: string) {
+  async getAuctionsByBidder(userId: string): Promise<IAuction[]> {
     return Auction.find({ 'bids.bidder': userId })
       .populate('seller', '_id name')
       .populate('bids.bidder', '_id name')
@@ -147,4 +152,3 @@ eaxport class AuctionService {
     return validData;
   }
 }
-

@@ -1,5 +1,5 @@
 import mongoose, { Document, Types } from 'mongoose';
-import { Request } from 'express';
+import { Request, Express } from 'express';
 
 export interface IUser extends Document {
   name: string;
@@ -137,4 +137,28 @@ export interface IAuthRequest extends Request {
     iat: number;
     exp: number;
   };
+}
+
+export interface IAuctionService {
+  createAuction(
+    userId: string,
+    body: Partial<IAuction>,
+    file?: Express.Multer.File,
+  ): Promise<IAuction>;
+  getAuctionById(auctionId: string): Promise<IAuction | null>;
+  getAuctionsBySeller(userId: string): Promise<IAuction[]>;
+  getAuctionPhoto(
+    auctionId: string,
+  ): Promise<{ data: Buffer; contentType: string } | { path: string } | null>;
+  updateAuctionById(
+    auctionId: string,
+    body: Partial<IAuction>,
+    file?: Express.Multer.File,
+  ): Promise<IAuction | null>;
+  deleteAuctionById(
+    auctionId: string,
+  ): Promise<{ deletedCount: number } | null>;
+  getOpenAuctions(): Promise<IAuction[]>;
+  getAllAuctions(): Promise<IAuction[]>;
+  getAuctionsByBidder(userId: string): Promise<IAuction[]>;
 }

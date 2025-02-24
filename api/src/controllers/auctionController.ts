@@ -1,127 +1,136 @@
 import { Request, Response } from 'express';
-import services from 'services/index';
-import { handleError } from 'utils/errorHandler';
+import { IAuctionService } from 'types/index';
 
 export class AuctionController {
-  public async createAuction(req: Request, res: Response) {
+  constructor(private readonly auctionService: IAuctionService) {}
+
+  async createAuction(req: Request, res: Response): Promise<void> {
     try {
       const { userId } = req.params;
-
-      const result = await services.auction.createAuctionService(
+      const result = await this.auctionService.createAuction(
         userId,
         req.body,
         req.file,
       );
-      return res.status(201).json(result);
+      res.status(201).json(result);
     } catch (error) {
-      return handleError(res, error, 'Error creating auction:');
+      console.error('Error creating auction:', error);
+      res.status(500).json({ error: 'Failed to create auction' });
     }
   }
 
-  public async getAuctionById(req: Request, res: Response) {
+  async getAuctionById(req: Request, res: Response): Promise<void> {
     try {
       const auctionId = req.params.auctionId;
-
-      const auction = await services.auction.getAuctionByIdService(auctionId);
+      const auction = await this.auctionService.getAuctionById(auctionId);
       if (!auction) {
-        return res.status(404).json({ error: 'Auction not found' });
+        res.status(404).json({ error: 'Auction not found' });
+        return;
       }
-      return res.status(200).json(auction);
+      res.status(200).json(auction);
     } catch (error) {
-      return handleError(res, error, 'Error fetching auction:');
+      console.error('Error fetching auction:', error);
+      res.status(500).json({ error: 'Failed to fetch auction' });
     }
   }
 
-  public async getAuctionsBySeller(req: Request, res: Response) {
+  async getAuctionsBySeller(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.params.userId;
-      const auctions =
-        await services.auction.getAuctionsBySellerService(userId);
+      const auctions = await this.auctionService.getAuctionsBySeller(userId);
       if (auctions.length === 0) {
-        return res
-          .status(404)
-          .json({ error: 'No auctions found for this seller' });
+        res.status(404).json({ error: 'No auctions found for this seller' });
+        return;
       }
-      return res.status(200).json(auctions);
+      res.status(200).json(auctions);
     } catch (error) {
-      return handleError(res, error, 'Error fetching auctions by seller:');
+      console.error('Error fetching auctions by seller:', error);
+      res.status(500).json({ error: 'Failed to fetch auctions by seller' });
     }
   }
 
-  public async getAuctionPhoto(req: Request, res: Response) {
+  async getAuctionPhoto(req: Request, res: Response): Promise<void> {
     try {
       const auctionId = req.params.auctionId;
-      const photo = await services.auction.getAuctionPhotoService(auctionId);
+      const photo = await this.auctionService.getAuctionPhoto(auctionId);
       if (!photo) {
-        return res.status(404).json({ error: 'Auction not found' });
+        res.status(404).json({ error: 'Auction not found' });
+        return;
       }
-      if (photo.path) {
-        return res.status(200).sendFile(photo.path);
+      if ('path' in photo) {
+        res.status(200).sendFile(photo.path);
       } else {
         res.set('Content-Type', photo.contentType);
-        return res.status(200).send(photo.data);
+        res.status(200).send(photo.data);
       }
     } catch (error) {
-      return handleError(res, error, 'Error fetching auction photo:');
+      console.error('Error fetching auction photo:', error);
+      res.status(500).json({ error: 'Failed to fetch auction photo' });
     }
   }
 
-  public async updateAuctionById(req: Request, res: Response) {
+  async updateAuctionById(req: Request, res: Response): Promise<void> {
     try {
       const auctionId = req.params.auctionId;
-      const updatedAuction = await services.auction.updateAuctionByIdService(
+      const updatedAuction = await this.auctionService.updateAuctionById(
         auctionId,
         req.body,
         req.file,
       );
       if (!updatedAuction) {
-        return res.status(404).json({ error: 'Auction not found' });
+        res.status(404).json({ error: 'Auction not found' });
+        return;
       }
-      return res.status(200).json(updatedAuction);
+      res.status(200).json(updatedAuction);
     } catch (error) {
-      return handleError(res, error, 'Error updating auction:');
+      console.error('Error updating auction:', error);
+      res.status(500).json({ error: 'Failed to update auction' });
     }
   }
 
-  public async deleteAuctionById(req: Request, res: Response) {
+  async deleteAuctionById(req: Request, res: Response): Promise<void> {
     try {
       const auctionId = req.params.auctionId;
-      const result = await services.auction.deleteAuctionByIdService(auctionId);
+      const result = await this.auctionService.deleteAuctionById(auctionId);
       if (!result) {
-        return res.status(404).json({ error: 'Auction not found' });
+        res.status(404).json({ error: 'Auction not found' });
+        return;
       }
-      return res.status(200).json({ message: 'Auction deleted successfully' });
+      res.status(200).json({ message: 'Auction deleted successfully' });
     } catch (error) {
-      return handleError(res, error, 'Error deleting auction:');
+      console.error('Error deleting auction:', error);
+      res.status(500).json({ error: 'Failed to delete auction' });
     }
   }
 
-  public async getOpenAuctions(_req: Request, res: Response) {
+  async getOpenAuctions(_req: Request, res: Response): Promise<void> {
     try {
-      const openAuctions = await services.auction.getOpenAuctionsService();
-      return res.status(200).json(openAuctions);
+      const openAuctions = await this.auctionService.getOpenAuctions();
+      res.status(200).json(openAuctions);
     } catch (error) {
-      return handleError(res, error, 'Error fetching open auctions:');
+      console.error('Error fetching open auctions:', error);
+      res.status(500).json({ error: 'Failed to fetch open auctions' });
     }
   }
 
-  public async getAllAuctions(_req: Request, res: Response) {
+  async getAllAuctions(_req: Request, res: Response): Promise<void> {
     try {
-      const auctions = await services.auction.getAllAuctionsService();
-      return res.status(200).json(auctions);
+      const auctions = await this.auctionService.getAllAuctions();
+      res.status(200).json(auctions);
     } catch (error) {
-      return handleError(res, error, 'Error fetching all auctions:');
+      console.error('Error fetching all auctions:', error);
+      res.status(500).json({ error: 'Failed to fetch all auctions' });
     }
   }
 
-  public async getAuctionsByBidder(req: Request, res: Response) {
+  async getAuctionsByBidder(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.params.userId;
-      const auctions =
-        await services.auction.getAuctionsByBidderService(userId);
-      return res.status(200).json(auctions);
+      const auctions = await this.auctionService.getAuctionsByBidder(userId);
+      res.status(200).json(auctions);
     } catch (error) {
-      return handleError(res, error, 'Error fetching auctions by bidder:');
+      console.error('Error fetching auctions by bidder:', error);
+      res.status(500).json({ error: 'Failed to fetch auctions by bidder' });
     }
   }
 }

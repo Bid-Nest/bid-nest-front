@@ -1,58 +1,69 @@
 import express from 'express';
 import multer from 'multer';
 import hasAuthorization from 'middlewares/hasAuthorization';
-import controllers from 'controllers/index';
-const upload = multer({ dest: 'uploads/' });
+import { isSeller } from 'middlewares/isSeller';
+import { AuctionController } from 'controllers/AuctionController';
+import { AuctionService } from 'controllers/AuctionService';
 
 const router = express.Router();
+const upload = multer({ dest: 'uploads/' });
+
+const auctionService = new AuctionService();
+const auctionController = new AuctionController(auctionService);
 
 router.post(
   '/create/by/:userId',
   upload.single('image'),
   hasAuthorization,
-  controllers.user.isSeller,
-  controllers.auction.createAuction,
+  isSeller,
+  auctionController.createAuction.bind(auctionController),
 );
 
 router.get(
   '/list/by/:userId',
   hasAuthorization,
-  controllers.auction.getAuctionsBySeller,
+  auctionController.getAuctionsBySeller.bind(auctionController),
 );
 
 router.get(
   '/open-auctions',
   hasAuthorization,
-  controllers.auction.getOpenAuctions,
+  auctionController.getOpenAuctions.bind(auctionController),
 );
 
 router.get(
   '/bidder/:userId',
   hasAuthorization,
-  controllers.auction.getAuctionsByBidder,
+  auctionController.getAuctionsByBidder.bind(auctionController),
 );
-router.get('/', controllers.auction.getAllAuctions);
-router.get('/:auctionId', hasAuthorization, controllers.auction.getAuctionById);
+
+router.get('/', auctionController.getAllAuctions.bind(auctionController));
+
+router.get(
+  '/:auctionId',
+  hasAuthorization,
+  auctionController.getAuctionById.bind(auctionController),
+);
 
 router.put(
   '/update/:auctionId',
   upload.single('image'),
   hasAuthorization,
-  controllers.user.isSeller,
-  controllers.auction.updateAuctionById,
+  isSeller,
+  auctionController.updateAuctionById.bind(auctionController),
 );
 
 router.delete(
   '/delete/:auctionId',
   hasAuthorization,
-  controllers.user.isSeller,
-  controllers.auction.deleteAuctionById,
+  isSeller,
+  auctionController.deleteAuctionById.bind(auctionController),
 );
 
 router.get(
   '/img/:auctionId',
   hasAuthorization,
-  controllers.auction.getAuctionPhoto,
+  auctionController.getAuctionPhoto.bind(auctionController),
 );
 
 export default router;
