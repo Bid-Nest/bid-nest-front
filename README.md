@@ -1,10 +1,10 @@
-# Bidstreet Web
+# Bid nest front
 
 ## Getting Started
 
-0. Change the directory:
+0. Clone the repo:
    ```
-   cd bidstreet/web
+   git clone git@github.com:Bid-Nest/bid-nest-front.git
    ```
 1. Install the dependencies:
    ```
